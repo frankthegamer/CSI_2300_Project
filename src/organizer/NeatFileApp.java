@@ -1,20 +1,21 @@
 package organizer;
 
-import javafx.application.Application;   // JavaFX imports
+import javafx.animation.FadeTransition;   // JavaFX imports
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
+import javafx.application.Application;   
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.util.Duration;
 
 import java.nio.file.*;             // java imports
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -23,7 +24,7 @@ import org.json.JSONObject;
 
 import organizer.rule.FileCategoryRule;   // Rule imports
 import organizer.rule.FileExtensionRule;
-import organizer.rule.LastAccessedRule;
+import organizer.rule.LastModifiedRule;
 import organizer.rule.NameHasRule;
 import organizer.rule.Rule;
 import organizer.rule.StringContainedRule;
@@ -31,25 +32,37 @@ import organizer.rule.StringContainedRule;
 public class NeatFileApp extends Application {
 
     private NeatFileLogic organizer = new NeatFileLogic();
+    
+    
     private NeatGroup currentGroup;
     private Set<Path> watchDirs = new HashSet<>();
     private Path configPath = Paths.get("groups.json");
-    private WatchService watchService;
     private List<NeatGroup> groups = new ArrayList<>();
-    private Thread watchServiceThread;
     private volatile boolean running = true;
 
     //UI elements
     private ListView<String> watchDirsListView;
+
+    private Stage primaryStage;
     private ComboBox<String> groupComboBox;
     private ListView<String> rulesListView;
-    private TextField targetDirField;
+    private Label targetDirLabel;
+    private StackPane targetIconPane;
+    
+    private Tooltip targetTooltip = new Tooltip();
+
+
 
 
     @Override
     public void start(Stage primaryStage) {
-        BorderPane root = new BorderPane();
+        this.primaryStage = primaryStage;
+
+        
+        BorderPane mainContent = new BorderPane();
+        StackPane root = new StackPane(mainContent); 
         Scene scene = new Scene(root, 1000, 600);
+
         scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
         //Title
@@ -106,7 +119,7 @@ public class NeatFileApp extends Application {
         AnchorPane.setRightAnchor(titleLabel, 0.0);
         titleLabel.setAlignment(Pos.CENTER);
 
-        root.setTop(topPane);
+        mainContent.setTop(topPane);
 
         
         // Watch path selection
@@ -168,6 +181,7 @@ public class NeatFileApp extends Application {
         rulesListView.setOnMouseClicked(event -> {
             String selectedRule = rulesListView.getSelectionModel().getSelectedItem();
             if (selectedRule != null && currentGroup != null) {
+
                 // Find the rule to remove by matching its toString() representation
                 Rule ruleToRemove = currentGroup.getRules().stream()
                         .filter(rule -> rule.toString().equals(selectedRule))
@@ -194,14 +208,15 @@ public class NeatFileApp extends Application {
         ruleButtonsBox.setHgap(10);
         ruleButtonsBox.setVgap(10); 
         ruleButtonsBox.setPrefWrapLength(280); 
+        ruleButtonsBox.setAlignment(Pos.CENTER);
 
         Button addStringRuleBtn = new Button("String Rule");
         Button addExtensionRuleBtn = new Button("Extension Rule");
         Button addCategoryRuleBtn = new Button("Category Rule");
         Button addNameRuleBtn = new Button("Name Rule");
-        Button addLastAccessedRuleBtn = new Button("Last Accessed Rule");
+        Button addLastModifiedRuleBtn = new Button("Last Modified Rule");
         ruleButtonsBox.getChildren().addAll(addStringRuleBtn, addExtensionRuleBtn, addCategoryRuleBtn,
-                addNameRuleBtn, addLastAccessedRuleBtn);
+                addNameRuleBtn, addLastModifiedRuleBtn);
         rulesBox.getChildren().addAll(rulesLabel, rulesListView, ruleButtonsBox);
 
         // Button events for rules
@@ -209,7 +224,7 @@ public class NeatFileApp extends Application {
         addExtensionRuleBtn.setOnAction(e -> createExtensionRuleUI());
         addStringRuleBtn.setOnAction(e -> createStringRuleUI());
         addNameRuleBtn.setOnAction(e -> createNameRuleUI());
-        addLastAccessedRuleBtn.setOnAction(e -> createLastAccessedRuleUI());
+        addLastModifiedRuleBtn.setOnAction(e -> createLastModifiedRuleUI());
 
         // Target Path Section
         VBox targetPathBox = new VBox(10);
@@ -221,21 +236,63 @@ public class NeatFileApp extends Application {
         targetPathLabel.setAlignment(Pos.CENTER);
 
 
-        targetDirField = new TextField();
-        targetDirField.setEditable(false);
-        Button selectTargetBtn = new Button("Select Target Dir");
-        selectTargetBtn.setOnAction(e -> createTargetUI(primaryStage));
-        targetPathBox.getChildren().addAll(targetPathLabel, targetDirField, selectTargetBtn);
+        targetDirLabel = new Label("");
+        targetDirLabel.setText("");
+        targetDirLabel.setStyle("""
+                -fx-text-fill: gray;
+                -fx-font-size: 15px;
+                -fx-font-weight: bold;
+                """);
+
+        ImageView folderIcon = new ImageView(new Image(getClass().getResourceAsStream("folder_icon.png")));
+        folderIcon.setFitWidth(150);
+        folderIcon.setFitHeight(150);
+
+        targetIconPane = new StackPane(folderIcon, targetDirLabel);
+        Tooltip.install(targetIconPane, targetTooltip); // attach tooltip initially
+
+        targetIconPane.setPrefSize(160, 60);
+        targetIconPane.setStyle("""
+            -fx-border-color: #ccc;
+            -fx-border-radius: 5px;
+            -fx-padding: 5px;
+            """);
+
+        targetIconPane.setOnMouseEntered(e -> {
+            targetIconPane.setStyle("""
+                -fx-border-color: #aaa;
+                -fx-border-radius: 5px;
+                -fx-background-color: #eaeaea;
+                -fx-padding: 5px;
+                -fx-cursor: hand;
+            """);
+        });
+        
+        targetIconPane.setOnMouseExited(e -> {
+            targetIconPane.setStyle("""
+                -fx-border-color: #ccc;
+                -fx-border-radius: 5px;
+                -fx-background-color: transparent;
+                -fx-padding: 5px;
+            """);
+        });
+        
+
+        targetIconPane.setOnMouseClicked(e -> createTargetUI(primaryStage));
+
+
+        targetPathBox.getChildren().addAll(targetPathLabel, targetIconPane);
+
 
         // workFlowBox add all sections
         workflowBox.getChildren().addAll(watchPathsBox, rulesBox, targetPathBox);
-        root.setCenter(workflowBox);
+        mainContent.setCenter(workflowBox);
 
         // Bottom: Finalize Button
         Button finalizeBtn = new Button("Finalize");
-        finalizeBtn.setStyle("-fx-font-size: 14px; -fx-padding: 10px;");
+        finalizeBtn.setStyle("-fx-font-size: 24px; -fx-padding: 10px;");
         finalizeBtn.setOnAction(e -> finalizeGroups());
-        root.setBottom(finalizeBtn);
+        mainContent.setBottom(finalizeBtn);
         BorderPane.setAlignment(finalizeBtn, javafx.geometry.Pos.CENTER);
         BorderPane.setMargin(finalizeBtn, new javafx.geometry.Insets(10));
 
@@ -265,21 +322,13 @@ public class NeatFileApp extends Application {
             System.out.println("No existing groups.json found or failed to load: " + e.getMessage());
         }
 
-        // Populate group dropdown
+        // fill up group dropdown
         updateGroupComboBox();
-
-        try {
-            watchService = FileSystems.getDefault().newWatchService();
-        } catch (IOException e) {
-            System.err.println("Failed to create WatchService: " + e.getMessage());
-            return;
-        }
 
         primaryStage.setScene(scene);
         primaryStage.setTitle("NeatFile");
         primaryStage.show();
 
-        startFileWatcher();
         startManualScanner();
         primaryStage.setOnCloseRequest(e -> shutdown());
     }
@@ -305,7 +354,14 @@ public class NeatFileApp extends Application {
         java.io.File selectedDir = chooser.showDialog(stage);
         if (selectedDir != null) {
             Path path = selectedDir.toPath();
-            targetDirField.setText(path.toString());
+
+            String fullPath = path.toString();
+            String folderName = path.getFileName().toString();
+            targetDirLabel.setText(folderName);
+            targetTooltip.setText(fullPath); // updates the shared tooltip
+            targetDirLabel.setTooltip(null); // prevent weird overlap
+
+
             if (currentGroup != null) {
                 currentGroup.setTargetDirectory(path);
             }
@@ -316,17 +372,19 @@ public class NeatFileApp extends Application {
         NeatGroup group = new NeatGroup(new HashSet<>(), null);
         groups.add(group);
         updateGroupComboBox();
-        groupComboBox.getSelectionModel().selectLast();
+        groupComboBox.getSelectionModel().selectLast(); // will call updateCurrentGroup()
 
-        targetDirField.clear(); // clear target path field
-        watchDirsListView.getItems().clear(); // clear the watch path list
-        rulesListView.getItems().clear();     // clear rules list if needed
     }
 
     private void updateGroupComboBox() {
         groupComboBox.getItems().clear();
         for (int i = 0; i < groups.size(); i++) {
             groupComboBox.getItems().add("Group " + (i + 1));
+        }
+
+        if(!groups.isEmpty()){
+            groupComboBox.getSelectionModel().selectFirst(); // select the first group by default
+            updateCurrentGroup(); // update UI with first group's details
         }
     }
 
@@ -346,7 +404,8 @@ public class NeatFileApp extends Application {
                     watchDirs.clear();
                     watchDirsListView.getItems().clear();
                     rulesListView.getItems().clear();
-                    targetDirField.clear();
+                    targetDirLabel.setText(""); // reset target path label
+                    targetDirLabel.setTooltip(new Tooltip("Click to choose target folder"));
                 } else {
                     groupComboBox.getSelectionModel().selectFirst();
                     updateCurrentGroup();
@@ -372,12 +431,17 @@ public class NeatFileApp extends Application {
             // Update target directory
             Path targetDir = currentGroup.getTargetDirectory();
             if (targetDir != null) {
-                targetDirField.setText(targetDir.toString());
+                String fullPath = targetDir.toString();
+                String folderName = targetDir.getFileName().toString();
+                targetDirLabel.setText(folderName);
+                targetTooltip.setText(fullPath);
             } else {
-                targetDirField.clear(); // Or setText("No target selected") if you'd prefer
+                targetDirLabel.setText("");
+                targetTooltip.setText("Click to choose target folder");
             }
         }
     }
+    
 
     private void createCategoryRuleUI() {
         Dialog<String> dialog = new Dialog<>();
@@ -472,10 +536,10 @@ public class NeatFileApp extends Application {
         });
     }
 
-    private void createLastAccessedRuleUI() {
+    private void createLastModifiedRuleUI() {     // UI for last modified rule
         TextInputDialog dialog = new TextInputDialog(" ");
-        dialog.setTitle("Add Last Accessed Rule");
-        dialog.setHeaderText("Enter the number of days (matches files last accessed longer ago than this)");
+        dialog.setTitle("Add Last Modified Rule");
+        dialog.setHeaderText("Enter the number of days (matches files modified longer ago than this)");
         dialog.setContentText("Days:");
 
         dialog.showAndWait().ifPresent(days -> {
@@ -490,7 +554,7 @@ public class NeatFileApp extends Application {
                         alert.showAndWait();
                         return;
                     }
-                    Rule rule = new LastAccessedRule(daysValue);
+                    Rule rule = new LastModifiedRule(daysValue);
                     currentGroup.addRule(rule);
                     rulesListView.getItems().add(rule.toString());
                 } catch (NumberFormatException e) {
@@ -504,7 +568,8 @@ public class NeatFileApp extends Application {
         });
     }
 
-    private void finalizeGroups() {
+
+    private void finalizeGroups() {  // saves groups to json file
         organizer.clearGroups();
         
         JSONArray jsonGroups = new JSONArray();
@@ -525,70 +590,20 @@ public class NeatFileApp extends Application {
         try (FileWriter file = new FileWriter("groups.json")) {
             file.write(jsonGroups.toString(2));
             System.out.println("Groups successfully saved to groups.json");
+            finalizeStatus((Stage) groupComboBox.getScene().getWindow(), "Changes saved!");
+
         } catch (IOException e) {
             System.err.println("Failed to write to groups.json: " + e.getMessage());
             e.printStackTrace();
         }
 
-        for(NeatGroup group : groups) {
-            if(!organizer.addGroup(group)){
-                System.out.println("Failed to add group to Organizer: " + group);
-            };
-        }
-
-        updateWatchDirectories(watchService);
+        for (NeatGroup group : groups) {
+            addGroupToOrganizer(group);
+        }        
     }
 
-    private void startFileWatcher() {
-        watchServiceThread = new Thread(() -> {
-            try {
-                watchService = FileSystems.getDefault().newWatchService();
-                updateWatchDirectories(watchService);
 
-                while (running && !Thread.currentThread().isInterrupted()) {
-                    try {
-                        WatchKey key = watchService.poll(1, TimeUnit.SECONDS);
-                        if (key != null) {
-                            for (WatchEvent<?> event : key.pollEvents()) {
-                                if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||
-                                        event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
-                                    Path fileName = (Path) event.context();
-                                    Path dir = (Path) key.watchable();
-                                    Path fullPath = dir.resolve(fileName);
-                                    
-                                    System.out.println("Detected change in directory: " + dir);
-                                    System.out.println("Full file path: " + fullPath);
-                                    
-                                    organizer.processFile(fullPath);
-                                }
-                            }
-                            key.reset();
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-                watchService.close();
-            } catch (IOException e) {
-                if (running) {
-                    System.err.println("WatchService error: " + e.getMessage());
-                }
-            } finally {
-                try {
-                    if (watchService != null) {
-                        watchService.close();
-                    }
-                } catch (Exception e) {
-                    System.err.println("Failed to close WatchService: " + e.getMessage());
-                }
-            }
-        });
-        watchServiceThread.setDaemon(true);
-        watchServiceThread.start();
-    }
-
-    private void startManualScanner() {
+    private void startManualScanner() {             // had to use this as backup because watch service wasn't working on my system
         Thread manualScannerThread = new Thread(() -> {
             while (running) {
                 try {
@@ -620,47 +635,51 @@ public class NeatFileApp extends Application {
     }
     
 
-    private void updateWatchDirectories(WatchService watchService) {
-        try {
-            System.out.println("Updating watcher with directories:");
-
-            Set<Path> allDirs = groups.stream()
-            .flatMap(g -> g.getWatchDirectories().stream())
-            .collect(Collectors.toSet());
-            for (Path dir : allDirs) {
-                if (Files.isDirectory(dir)) {
-                    dir.register(watchService,
-                            StandardWatchEventKinds.ENTRY_CREATE,
-                            StandardWatchEventKinds.ENTRY_MODIFY);
-                    System.out.println("Registered watch directory: " + dir);
-                } else {
-                    System.out.println("Skipping watch directory: " + dir);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Error updating watch directories: " + e.getMessage());
-        }
-    }
-
     private void shutdown() {
         running = false;
-        if (watchServiceThread != null) {
-            watchServiceThread.interrupt();
-            try {
-                watchServiceThread.join();
-            } catch (InterruptedException e) {
-                System.err.println("Interrupted while shutting down: " + e.getMessage());
-            }
-        }
-        try {
-            if (watchService != null) {
-                watchService.close();
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to close WatchService: " + e.getMessage());
-        }
+
     }
+
+    public boolean addGroupToOrganizer(NeatGroup group) {
+        boolean success = organizer.addGroup(group);
+        if (!success) {
+            finalizeStatus((Stage) groupComboBox.getScene().getWindow(), "Duplicate group not added.");
+        }
+        return success;
+    }
+    
+
+   public void finalizeStatus(Stage stage, String message) {   // status message for saving groups
+        Label update = new Label(message);
+        update.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-padding: 8px; -fx-background-radius: 6px;");
+        update.setOpacity(0);
+
+        StackPane root = (StackPane) stage.getScene().getRoot();
+        root.getChildren().add(update);
+        StackPane.setAlignment(update, Pos.BOTTOM_CENTER);
+
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.3), update);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(1);
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
+
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.3), update);
+        fadeOut.setFromValue(1);
+        fadeOut.setToValue(0);
+
+        SequentialTransition seq = new SequentialTransition(fadeIn, pause, fadeOut);
+        seq.setOnFinished(e -> root.getChildren().remove(update));
+        seq.play();
+    }
+
+
     public static void main(String[] args) {
         launch(args);
     }
+
+    public Stage getPrimaryStage() {
+        return primaryStage;
+    }
+    
 }

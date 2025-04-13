@@ -5,9 +5,9 @@ import org.json.JSONObject;
 
 public interface Rule {
 
-    boolean matches(Path file);
-    boolean equals(Object obj);
-    int hashCode();
+    boolean matches(Path file);  // check if the rule matches a file
+    boolean equals(Object obj);  // check if two rules are equal
+    int hashCode();             // generate a hash code for the rule
 
     JSONObject toJSON();
     static Rule fromJSON(JSONObject json){
@@ -15,7 +15,7 @@ public interface Rule {
         return switch (type){
             case "FileCategoryRule" -> new FileCategoryRule(json);
             case "FileExtensionRule" -> new FileExtensionRule(json);
-            case "LastAccessedRule" -> new LastAccessedRule(json);
+            case "LastAccessedRule" -> new LastModifiedRule(json);
             case "NameHasRule" -> new NameHasRule(json);
             case "StringContainedRule" -> new StringContainedRule(json);
             default -> throw new IllegalArgumentException("Unknown rule type: " + type);

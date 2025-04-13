@@ -1,1 +1,8 @@
-[]
+[{
+  "targetDirectory": "C:\\Users\\aniar\\OneDrive\\Desktop\\TARGET",
+  "rules": [{
+    "type": "FileCategoryRule",
+    "category": "Image"
+  }],
+  "watchDirectories": ["C:\\Users\\aniar\\OneDrive\\Desktop\\testing_folder"]
+}]

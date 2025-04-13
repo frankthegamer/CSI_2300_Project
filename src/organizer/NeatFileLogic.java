@@ -6,12 +6,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javafx.stage.Stage;
 import java.io.IOException;
 import java.nio.file.*;
 
 public class NeatFileLogic {
-    private final Object fileProcessingLock = new Object();
-    private final Set<NeatGroup> groups = Collections.synchronizedSet(new HashSet<>());
+    private final Object fileProcessingLock = new Object();  
+    private final Set<NeatGroup> groups = Collections.synchronizedSet(new HashSet<>()); 
+
+    private NeatFileApp app;
+
+    public void setApp(NeatFileApp app) { // allows access to app for status updates
+        this.app = app;
+    }
+
 
     public boolean addGroup(NeatGroup group){
 
@@ -27,37 +35,43 @@ public class NeatFileLogic {
             }
         }
 
-       // checks for EXACT duplicate group
-        if(groups.contains(group)){
+        // checks for EXACT duplicate group
+        if (groups.contains(group)) {
+            if (app != null) {
+                    Stage stage = (Stage) app.getPrimaryStage();
+                    app.finalizeStatus(stage, "Duplicate group not added!");
+            }
             System.out.println("Error: A group with the same rules, watch directories, and target already exists!");
             return false;
         }
+
+    
         groups.add(group);
         return true;
     }
     
-    public void processFile(Path file){
-        synchronized(fileProcessingLock){       // ensures files are processed one at a time
+    public void processFile(Path file){   // processes file according to rules of groups it belongs to
+        synchronized(fileProcessingLock){    // ensures files are processed one at a time
 
         System.out.println("Processing file: " + file);
     
-        List<NeatGroup> matchingGroups = new ArrayList<>(); 
-        for(NeatGroup group : groups) {    // check if file is in one of group's watch directories + satisfies all group criteria
+        List<NeatGroup> eligibleGroups = new ArrayList<>(); 
+        for(NeatGroup group : groups) {    // check if file is in watch directories + satisfies all group criteria
             boolean inWatchDir = group.getWatchDirectories().stream().anyMatch(watchDir -> file.startsWith(watchDir));
             if (inWatchDir && group.matches(file)){
-                matchingGroups.add(group);     
+                eligibleGroups.add(group);     
             }
         }
-        if (matchingGroups.isEmpty()){  // no match
+        if (eligibleGroups.isEmpty()){  // no match
             System.out.println("No matching group for: " + file);
             return;
         }
-        if (matchingGroups.size() > 1 ) {  // checks if matching groups have same target directory
-            Path target = matchingGroups.get(0).getTargetDirectory();
-            boolean conflict = matchingGroups.stream().anyMatch(g -> !g.getTargetDirectory().equals(target));
+        if (eligibleGroups.size() > 1 ) {  // multiple matching groups
+            Path target = eligibleGroups.get(0).getTargetDirectory();
+            boolean conflict = eligibleGroups.stream().anyMatch(g -> !g.getTargetDirectory().equals(target));
             if (conflict) {
                 System.out.println("Conflict: File "+ file + " matches multiple groups with different targets: " + 
-                    matchingGroups.stream()
+                    eligibleGroups.stream()
                         .map(g -> g.getTargetDirectory().toString())
                         .collect(Collectors.joining(", ")));
                 return; // then don't move file
@@ -65,7 +79,7 @@ public class NeatFileLogic {
         }
 
 // moves file to target of first matching group                          
-        NeatGroup group = matchingGroups.get(0);
+        NeatGroup group = eligibleGroups.get(0);
         Path targetDir = group.getTargetDirectory();
         Path targetFile = targetDir.resolve(file.getFileName());
         
@@ -81,17 +95,38 @@ public class NeatFileLogic {
         }
 
         try {
-            Files.createDirectories(targetDir);  // create if dir doesn't exist
-            Files.move(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("Moved " + file + " to " + targetFile);
+            Files.createDirectories(targetDir);  // ensure directory exists
+
+            String fileName = file.getFileName().toString(); 
+            String baseName = fileName;
+            String extension = "";
+
+            int dotIndex = fileName.lastIndexOf('.');
+
+            if(dotIndex > 0 && dotIndex < fileName.length() - 1){
+                baseName = fileName.substring(0, dotIndex);
+                extension = fileName.substring(dotIndex); // includes the dot
+            }
+
+            Path uniqueTargetFile = targetDir.resolve(fileName);
+            int counter = 1;
+            while (Files.exists(uniqueTargetFile)) {
+                uniqueTargetFile = targetDir.resolve(baseName + "_" + counter + extension);
+                counter++;
+            }
+
+            Files.move(file, uniqueTargetFile);
+            System.out.println("Moved " + file + " to " + uniqueTargetFile);
+            
         } catch (IOException e) {
             System.out.println("Failed to move " + file + " to " + targetFile + ": " + e.getMessage());
+            
         }
 
         }
     }
 
-    public void clearGroups() {
+    public void clearGroups() { 
         groups.clear();
     }
 }

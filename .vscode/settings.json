@@ -27,5 +27,6 @@
         "c:\\Users\\aniar\\Downloads\\commons-io-2.13.0.jar",
         "c:\\Users\\aniar\\Downloads\\log4j-core-2.17.2.jar",
         "c:\\Users\\aniar\\Downloads\\log4j-api-2.17.2.jar",
-    ]
+    ],
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable"
 }
