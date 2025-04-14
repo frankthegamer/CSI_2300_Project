@@ -18,7 +18,6 @@ NeatFile is a JavaFX desktop application that helps you automatically organize f
 - **Simple UI**
   - Add watch folders and rules with buttons.
   - Click to remove them
-  
 - **Conflict detection**
   - Prevents duplicate or conflicting groups.
 - **Manual scanning**
@@ -29,13 +28,13 @@ NeatFile is a JavaFX desktop application that helps you automatically organize f
 ## How to Use
 
 ### 1. Launching the App
-- Run the application via your Java IDE or terminal with JavaFX configured.
+- Run the `run.bat` file from the NeatFile.zip release, or use the JAR + JavaFX setup if you prefer.
 - The main window will appear with three sections: Watch Paths, Rules, and Target Path.
 
 ### 2. Creating a Group
 - Click the "+" button near the dropdown to create a new group.
 - The app will auto-select the new group.
-- If already created, the first group will be selected on startup
+- If already created, the first group will be selected on startup.
 
 ### 3. Adding Watch Paths
 - Click the small "+" button under the Watch Paths section.
@@ -63,43 +62,79 @@ NeatFile is a JavaFX desktop application that helps you automatically organize f
 
 ## Important Notes
 
-- Conflicting groups (with same watch dirs, rules and different target) are not saved to rules.json after finalizing; they will have to be removed first.
+- Conflicting groups (with same watch dirs, rules and different target) are not saved to `groups.json` after finalizing; they will have to be removed first.
 - If a file with the same name already exists in the target folder, the new one is renamed.
+- Any changes must be finalized before exiting the application to save them.
 
 ---
 
 ## Requirements
 
 - Java 17+
-- JavaFX SDK (make sure it's correctly added to your project)
-- JSON (org.json) library
+- JavaFX SDK (included in the release bundle)
+- Additional libraries (included in lib folder)
 
 ---
 
 ## Project Structure
-```
 NeatFile/
+├── lib/                            # Required JAR libraries (POI, PDFBox, JSON, etc.)
+│   ├── poi-5.2.3.jar
+│   ├── poi-ooxml-5.2.3.jar
+│   ├── poi-ooxml-full-5.2.3.jar
+│   ├── xmlbeans-5.1.1.jar
+│   ├── commons-collections4-4.4.jar
+│   ├── commons-compress-1.21.jar
+│   ├── commons-io-2.13.0.jar
+│   ├── commons-logging-1.2.jar
+│   ├── pdfbox-2.0.27.jar
+│   ├── fontbox-2.0.27.jar
+│   ├── log4j-api-2.17.2.jar
+│   ├── log4j-core-2.17.2.jar
+│   └── json-20250107.jar
+│
 ├── src/
 │   ├── organizer/
-│   │   ├── NeatFileApp.java
+│   │   ├── NeatFileApp.java       # Main class
 │   │   ├── NeatFileLogic.java
 │   │   ├── NeatGroup.java
 │   │   ├── style.css
-│   │   ├── folder_icon.png  
-│   ├── organizer/rule/
-│   │   ├── Rule.java
-│   │   ├── FileExtensionRule.java
-│   │   ├── StringContainedRule.java
-│   │   ├── FileCategoryRule.java
-│   │   ├── NameHasRule.java
-│   │   ├── LastModifiedRule.java 
-├── groups.json (auto-generated)
-```
+│   │   └── folder_icon.png
+│   │
+│   └── organizer/rule/
+│       ├── Rule.java
+│       ├── FileExtensionRule.java
+│       ├── StringContainedRule.java
+│       ├── FileCategoryRule.java
+│       ├── NameHasRule.java
+│       └── LastModifiedRule.java
+│
+├── NeatFile.jar                   
+├── run.bat                      
+├── manifest.txt                   
+├── README.md                      
+├── ui_preview.png                
+├── class_diagram.png              
+└── javafx-sdk-24/                 
+    ├── lib/
+    │   ├── javafx.controls.jar
+    │   ├── javafx.fxml.jar
+    │   ├── javafx.graphics.jar
+    │   ├── javafx.base.jar
+    │   └── ... (other JavaFX modules)
+    └── bin/
+        └── *.dll
+
+---
+
+## UI Preview
+
+![UI Preview](ui_preview.png)
 
 ---
 
 ## Credits
+
 Created by Frank Richter as a final project for CSI 2300
 
 ---
-
