@@ -1,0 +1,71 @@
+classDiagram
+    class NeatFileApp {
+    }
+
+    class NeatFileLogic {
+        - Set~NeatGroup~ groups
+        + boolean addGroup(NeatGroup)
+        + void processFile(Path)
+        + void clearGroups()
+    }
+
+    class NeatGroup {
+        - Set~Path~ watchDirs
+        - Set~Rule~ rules
+        - Path targetDirectory
+    }
+
+    class Rule {
+        <<interface>>
+        + matches(Path): boolean
+        + toJSON(): JSONObject
+    }
+
+    class FileCategoryRule {
+        - String category
+        + matches(Path): boolean
+        + toJSON(): JSONObject
+    }
+
+    class FileExtensionRule {
+        - Set~String~ extensions
+        + matches(Path): boolean
+        + toJSON(): JSONObject
+    }
+
+    class LastModifiedRule {
+        - long days
+        + matches(Path): boolean
+        + toJSON(): JSONObject
+    }
+
+    class NameHasRule {
+        - String input
+        - boolean caseSensitive
+        - boolean useRegex
+        + matches(Path): boolean
+        + toJSON(): JSONObject
+    }
+
+    class StringContainedRule {
+        - String input
+        - boolean caseSensitive
+        - boolean useRegex
+        + matches(Path): boolean
+        + toJSON(): JSONObject
+    }
+
+    
+    NeatFileApp --> NeatFileLogic : uses
+    NeatFileApp --> NeatGroup : manages
+    NeatFileLogic --> NeatGroup : manages
+    NeatGroup "1" --> "0..*" Rule : has rules(s)
+    Rule <|.. FileCategoryRule
+    Rule <|.. FileExtensionRule
+    Rule <|.. LastModifiedRule
+    Rule <|.. NameHasRule
+    Rule <|.. StringContainedRule
+
+    note for NeatGroup "Includes getters and setters for rules and directories."
+    note for NeatFileApp "Handles UI, events, and ties everything together. Delegates logic to NeatFileLogic."
+

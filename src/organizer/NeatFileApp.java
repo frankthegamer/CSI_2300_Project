@@ -63,7 +63,8 @@ public class NeatFileApp extends Application {
         StackPane root = new StackPane(mainContent); 
         Scene scene = new Scene(root, 1000, 600);
 
-        scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/organizer/style.css").toExternalForm());
+
 
         //Title
         Label titleLabel = new Label("NeatFile");
@@ -244,7 +245,7 @@ public class NeatFileApp extends Application {
                 -fx-font-weight: bold;
                 """);
 
-        ImageView folderIcon = new ImageView(new Image(getClass().getResourceAsStream("folder_icon.png")));
+        ImageView folderIcon = new ImageView(new Image(getClass().getResourceAsStream("/organizer/folder_icon.png")));
         folderIcon.setFitWidth(150);
         folderIcon.setFitHeight(150);
 
@@ -327,6 +328,13 @@ public class NeatFileApp extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.setTitle("NeatFile");
+
+        if (targetTooltip.getText() == null || targetTooltip.getText().isEmpty()) {
+            targetTooltip.setText("Add target");
+        }
+        Tooltip.uninstall(targetIconPane, targetTooltip);
+        Tooltip.install(targetIconPane, targetTooltip);
+        
         primaryStage.show();
 
         startManualScanner();
@@ -439,6 +447,10 @@ public class NeatFileApp extends Application {
                 targetDirLabel.setText("");
                 targetTooltip.setText("Click to choose target folder");
             }
+
+            // reinstall the tooltip to force update
+            Tooltip.uninstall(targetIconPane, targetTooltip);  
+            Tooltip.install(targetIconPane, targetTooltip);
         }
     }
     
