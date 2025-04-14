@@ -29,8 +29,8 @@ NeatFile is a JavaFX desktop application that helps you automatically organize f
 ## How to Use
 
 ### 1. Launching the App
-- Run the application via your Java IDE or terminal with JavaFX configured.
-- The main window will appear with three sections: Watch Paths, Rules, and Target Path.
+-- Run the app using the provided `.bat` file (recommended) or from the terminal with JavaFX and dependencies configured.
+- The main window shows **Watch Paths**, **Rules**, and **Target Path** sections.
 
 ### 2. Creating a Group
 - Click the "+" button near the dropdown to create a new group.
