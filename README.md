@@ -77,6 +77,7 @@ NeatFile is a JavaFX desktop application that helps you automatically organize f
 ---
 
 ## Project Structure
+```
 NeatFile/
 ├── lib/                            # Required JAR libraries (POI, PDFBox, JSON, etc.)
 │   ├── poi-5.2.3.jar
@@ -124,7 +125,7 @@ NeatFile/
     │   └── ... (other JavaFX modules)
     └── bin/
         └── *.dll
-
+```
 ---
 
 ## UI Preview
