@@ -112,8 +112,7 @@ NeatFile/
 │       └── LastModifiedRule.java
 │
 ├── NeatFile.jar                   
-├── run.bat                      
-├── manifest.txt                   
+├── run.bat                                   
 ├── README.md                      
 ├── ui_preview.png                
 ├── class_diagram.png              
