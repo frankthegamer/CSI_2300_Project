@@ -1,2 +1,10 @@
-# Java
-*.class
+# Ignore the following files and directories
+
+bin/
+out/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+javafx-sdk-24/
