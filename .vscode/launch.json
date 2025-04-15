@@ -9,7 +9,7 @@
             "name": "Launch App",
             "request": "launch",
             "mainClass": "organizer.NeatFileApp",
-            "vmArgs": "--module-path C:/Users/aniar/OneDrive/Desktop/JavaFX/javafx-sdk-24/lib --add-modules javafx.controls,javafx.fxml",    
+            "vmArgs": "--module-path PATH/TO/JAVAFX/MODULES --add-modules javafx.controls,javafx.fxml",    
         }
     ]
 }
