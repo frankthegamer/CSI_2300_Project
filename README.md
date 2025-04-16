@@ -116,9 +116,7 @@ NeatFile/
 │
 ├── NeatFile.jar                   
 ├── run.bat                                   
-├── README.md                      
-├── ui_preview.png                
-├── class_diagram.png              
+├── README.md                                 
 └── javafx-sdk-24/                 
     ├── lib/
     │   ├── javafx.controls.jar
