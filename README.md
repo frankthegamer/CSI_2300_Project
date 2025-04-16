@@ -28,8 +28,10 @@ NeatFile is a JavaFX desktop application that helps you automatically organize f
 ## How to Use
 
 ### 1. Launching the App
-- Run the `run.bat` file from the NeatFile.zip release - [download it here](https://github.com/frankthegamer/CSI_2300_Project/releases/download/v1.0/NeatFile.zip)
-- Because the program is unrecognized, your system may display a pop-up saying "Windows protected your PC", click "run anyways".
+- Make sure you have Java 17 or later installed.
+- Download the latest release ZIP file from the GitHub repository - download here. 
+- Extract the contents of the ZIP file to a convenient location - [download here](https://github.com/frankthegamer/CSI_2300_Project/releases/download/v1.0/NeatFile.zip)
+- Double click the `run.bat` file. Because the program is unrecognized, your system may display a pop-up saying "Windows protected your PC", click "run anyways".
 - The main window will appear with three sections: Watch Paths, Rules, and Target Path.
 
 ### 2. Creating a Group
